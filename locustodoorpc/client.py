@@ -34,12 +34,12 @@ class ODOOLocustClient(odoorpc.ODOO):
     def capture_request(request_type):
         def _wrapped_func(func):
             def _wrapper(self, *args, **kwargs):
-                if (args[0] == '/jsonrpc' and
-                        args[1].get('method').startswith('execute')):
-                    # example of name: /jsonrpc | product.product: search
-                    name = "%s | %s: %s" % tuple(
-                        [args[0]] + args[1]['args'][3:5]
-                    )
+                if len(args) == 2:
+                    if (args[0] == '/jsonrpc' and args[1].get('method').startswith('execute')):
+                        # example of name: /jsonrpc | product.product: search
+                        name = "%s | %s: %s" % tuple(
+                            [args[0]] + args[1]['args'][3:5]
+                        )
                 else:
                     name = args[0]
                 start_time = time.time()
@@ -47,7 +47,7 @@ class ODOOLocustClient(odoorpc.ODOO):
                     response = func(self, *args, **kwargs)
                 except (HTTPError, URLError) as err:
                     total_time = int((time.time() - start_time) * 1000)
-                    events.request_failure.fire(
+                    events.user_error.fire(
                         request_type=request_type,
                         name=name,
                         response_time=total_time,
@@ -61,7 +61,7 @@ class ODOOLocustClient(odoorpc.ODOO):
                     else:  # http
                         response = response.read()
                         size = len(response)
-                    events.request_success.fire(
+                    events.request.fire(
                         request_type=request_type,
                         name=name,
                         response_time=total_time,
